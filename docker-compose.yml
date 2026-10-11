@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # Python FastAPI Tactical Relay
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sentinel-relay
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      - AISSTREAM_KEY=${AISSTREAM_KEY:-}
+      - RELAY_TOKEN=${RELAY_TOKEN:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Lightweight Web Server for Frontend Common Operating Picture (COP)
+  frontend:
+    image: nginx:alpine
+    container_name: sentinel-cop-ui
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./sentinel-x-1a-v8-1.html:/usr/share/nginx/html/sentinel-x-1a-v8-1.html:ro
+      - ./priority_model.json:/usr/share/nginx/html/priority_model.json:ro
+    depends_on:
+      - backend
